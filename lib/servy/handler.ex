@@ -19,10 +19,26 @@ defmodule Servy.Handler do
       |> String.split(" ")
     conv = %{ method: method, path: path, resp_body: ""}
   end
+  
+  def log(conv), do: IO.inspect conv
+
 
   def route(conv) do
     #conv = %{ method: "GET", path: "/wildthings", resp_body: "Bear, Lions, Tigers"}
-    %{ conv | resp_body: "Lion, bears"}
+  #  if conv.path == "/wildthings" do
+  #    %{ conv | resp_body: "Bears, Lions, Tigers"}
+  #  else 
+  #    %{ conv | resp_body: "Teddy, Smoll"}
+  #  end
+    route(conv, conv.method, conv.path)
+  end
+
+  def route(conv, "GET", "/wildthings") do
+    %{ conv | resp_body: "Bears, Lions, Tigers"}
+  end
+
+  def route(conv, "GET", "/bears") do
+    %{ conv | resp_body: "Teddy, Smoll"}
   end
 
   def format_response(conv) do
@@ -31,7 +47,7 @@ defmodule Servy.Handler do
     HTTP/1.1. 200 OK
     Content-Type: text/html
     COntent-Length: #{String.length(conv.resp_body)}
-    Bears, Lions, TIgers
+    #{conv.resp_body}
   """
   end
   
@@ -44,6 +60,12 @@ User-Agent: ExampleBrowser/1.0
 Accept: */*
 """
 
+request1 = """
+GET /bears HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+"""
 expected_response = """
 HTTP/1.1. 200 OK
 Content-Type: text/html
@@ -52,6 +74,6 @@ COntent-Length: 20
 Bears, Lions, TIgers
 """
 
-response = Servy.Handler.handle(request)
+response = Servy.Handler.handle(request1)
 
 IO.puts response
