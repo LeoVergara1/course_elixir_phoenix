@@ -17,10 +17,15 @@ defmodule Servy.Handler do
       |> String.split("\n")
       |> List.first
       |> String.split(" ")
-    conv = %{ method: method, path: path, resp_body: ""}
+    %{ method: method, 
+      path: path, 
+      resp_body: "",
+      status: nil
+    }
   end
   
   def log(conv), do: IO.inspect conv
+
 
 
   def route(conv) do
@@ -34,23 +39,40 @@ defmodule Servy.Handler do
   end
 
   def route(conv, "GET", "/wildthings") do
-    %{ conv | resp_body: "Bears, Lions, Tigers"}
+    %{ conv | status: 200, resp_body: "Bears, Lions, Tigers"}
   end
 
   def route(conv, "GET", "/bears") do
-    %{ conv | resp_body: "Teddy, Smoll"}
+    %{ conv | status: 200, resp_body: "Teddy, Smoll"}
+  end
+
+  def route(conv, "GET", "/bears/" <> id) do
+    %{conv | status: 200, resp_body: "Bear #{id}"}
+  end
+  def route(conv, _method, path) do
+    %{ conv | status: 404, resp_body: "No #{path}"}
   end
 
   def format_response(conv) do
-  
   """
-    HTTP/1.1. 200 OK
+    HTTP/1.1. #{conv.status} #{status_reason(conv.status)}
     Content-Type: text/html
     COntent-Length: #{String.length(conv.resp_body)}
     #{conv.resp_body}
   """
   end
   
+
+  defp status_reason(code) do
+  %{
+    200 => "OK",
+    201 => "Created",
+    403 => "Forbidden",
+    404 => "Not found",
+    500 => "Internal server error"
+  }[code]
+  end
+
 end
 
 request = """
@@ -66,6 +88,12 @@ Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
 """
+request2 = """
+GET /noPath HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+"""
 expected_response = """
 HTTP/1.1. 200 OK
 Content-Type: text/html
@@ -74,6 +102,17 @@ COntent-Length: 20
 Bears, Lions, TIgers
 """
 
-response = Servy.Handler.handle(request1)
+response = Servy.Handler.handle(request2)
+
+IO.puts response
+
+request2 = """
+GET /bears/2 HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+"""
+
+response = Servy.Handler.handle(request2)
 
 IO.puts response
