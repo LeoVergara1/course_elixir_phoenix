@@ -13,7 +13,7 @@ defmodule Servy.Handler do
   end
 
   def track(%{status: 404, path: path} = conv) do
-    IO.puts "Warning with path: ${path}"
+    IO.puts "Warning with path: #{path}"
     conv
   end
 
@@ -60,9 +60,40 @@ defmodule Servy.Handler do
     %{ conv | status: 200, resp_body: "Teddy, Smoll"}
   end
 
+  def route(conv, "GET", "/about") do
+    IO.puts "Leega"
+    file =
+    Path.expand("../../pages", __DIR__)
+    |> Path.join("about.html")
+    |> File.read
+    |> handle_file(conv)
+ #   case File.read("pages/about.html") do
+ #     {:ok, content} ->
+ #       %{conv | status: 200, resp_body: content}
+ #     {:error, :enoent} ->
+ #       %{conv | status: 404, resp_body: "File not found"}
+ #     {:error, reason} ->
+ #       %{conv | status: 404, resp_body: reason}
+ #   end
+  end
+
+  def handle_file({:ok, content}, conv) do
+    %{conv | status: 200, resp_body: content}
+  end
+
+  def handle_file({:error, :enoent}, conv) do
+    %{conv | status: 404, resp_body: "File not found"}
+  end
+
+  def handle_file({:ok, reason}, conv) do
+    %{conv | status: 500, resp_body: "File error: #{reason}"}
+  end
+
   def route(conv, "GET", "/bears/" <> id) do
     %{conv | status: 200, resp_body: "Bear #{id}"}
   end
+  
+
   def route(conv, _method, path) do
     %{ conv | status: 404, resp_body: "No #{path}"}
   end
@@ -108,6 +139,12 @@ Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
 """
+request3 = """
+GET /about HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+"""
 expected_response = """
 HTTP/1.1. 200 OK
 Content-Type: text/html
@@ -116,9 +153,9 @@ COntent-Length: 20
 Bears, Lions, TIgers
 """
 
-response = Servy.Handler.handle(request2)
+#response = Servy.Handler.handle(request2)
 
-IO.puts response
+#IO.puts response
 
 request2 = """
 GET /bears/2 HTTP/1.1
@@ -127,6 +164,13 @@ User-Agent: ExampleBrowser/1.0
 Accept: */*
 """
 
-response = Servy.Handler.handle(request2)
+request3 = """
+GET /about HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+"""
+
+response = Servy.Handler.handle(request3)
 
 IO.puts response
