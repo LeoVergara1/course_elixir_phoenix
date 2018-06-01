@@ -5,9 +5,23 @@ defmodule Servy.Handler do
   #  format_response(conv)
     request 
     |> parse 
+    |> rewrite_path
+    |> log
+    |> track
     |> route 
     |> format_response
   end
+
+  def track(%{status: 404, path: path} = conv) do
+    IO.puts "Warning with path: ${path}"
+    conv
+  end
+
+  def rewrite_path(%{path: "/wildlife"} = conv) do
+    %{ conv | path: "/wildthings"}
+  end
+
+  def rewrite_path(conv), do: conv
 
   def parse(request) do
  #   first_line = request |> String.split "/n" |> List.first
@@ -20,7 +34,7 @@ defmodule Servy.Handler do
     %{ method: method, 
       path: path, 
       resp_body: "",
-      status: nil
+      status: 404
     }
   end
   
